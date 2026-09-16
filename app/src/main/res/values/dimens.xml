@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    <dimen name="card_radius">16dp</dimen>
+    <dimen name="track_height">80dp</dimen>
+    <dimen name="waveform_height">60dp</dimen>
+    <dimen name="fab_margin">20dp</dimen>
+</resources>

@@ -1,0 +1,27 @@
+# Built output
+*.apk
+*.aab
+*.ap_
+*.dex
+bin/
+build/
+out/
+
+# Gradle
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# Local config
+local.properties
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Android Studio
+captures/
+.externalNativeBuild/
+.cxx/

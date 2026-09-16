@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/surface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="16dp">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_app_logo"
+            android:contentDescription="@string/app_name"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:text="Export Mix"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-medium"/>
+
+    </LinearLayout>
+
+    <!-- Progress -->
+    <TextView
+        android:id="@+id/tv_export_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rendering mix…"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:paddingBottom="10dp"/>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progress_export"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        app:trackColor="@color/divider"
+        app:indicatorColor="@color/primary"
+        app:trackCornerRadius="4dp"/>
+
+    <TextView
+        android:id="@+id/tv_export_detail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text=""
+        android:textColor="@color/text_hint"
+        android:textSize="11sp"/>
+
+    <!-- Done state: share buttons -->
+    <LinearLayout
+        android:id="@+id/layout_done"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="16dp">
+
+        <!-- Play the rendered mix -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_play_mix"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="8dp"
+            android:text="▶  Play Mix"
+            android:textColor="@color/primary"
+            android:textSize="15sp"
+            app:strokeColor="@color/primary"
+            app:cornerRadius="14dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_share_whatsapp"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="  Share on WhatsApp"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            app:backgroundTint="#25D366"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_whatsapp"
+            app:iconTint="@color/white"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_share_other"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
+            android:text="Share via…"
+            android:textColor="@color/primary"
+            app:strokeColor="@color/primary"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_share"
+            app:iconTint="@color/primary"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_download"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
+            android:text="Save to Downloads"
+            android:textColor="@color/accent_alt"
+            app:strokeColor="@color/accent_alt"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_download"
+            app:iconTint="@color/accent_alt"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_close"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="4dp"
+            android:text="Close"
+            android:textColor="@color/text_secondary"
+            app:cornerRadius="12dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

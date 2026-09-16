@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">MusicMixer</string>
+    <string name="add_tracks">Add Tracks</string>
+    <string name="compose">Compose Mix</string>
+    <string name="no_tracks">No tracks added yet.\nTap + to import audio files.</string>
+    <string name="tracks_label">Tracks</string>
+    <string name="editor_title">Track Editor</string>
+    <string name="trim_start">Trim Start</string>
+    <string name="trim_end">Trim End</string>
+    <string name="apply">Apply</string>
+    <string name="cancel">Cancel</string>
+    <string name="export">Export Mix</string>
+    <string name="share_whatsapp">Share on WhatsApp</string>
+    <string name="rendering">Rendering mix…</string>
+    <string name="done">Done!</string>
+    <string name="remove_track">Remove</string>
+    <string name="edit_track">Edit / Trim</string>
+    <string name="move_up">Move Up</string>
+    <string name="move_down">Move Down</string>
+    <string name="permission_required">Storage permission is required to read audio files.</string>
+    <string name="grant">Grant</string>
+    <string name="duration_format">%02d:%02d.%03d</string>
+    <string name="track_order">Track %d</string>
+    <string name="whatsapp_not_installed">WhatsApp is not installed on this device.</string>
+    <string name="export_success">Mix exported successfully!</string>
+    <string name="share_other">Share via…</string>
+    <string name="master_volume">Master Volume</string>
+    <string name="fade_in_out">Fade In/Out</string>
+    <string name="preview">Preview</string>
+    <string name="stop_preview">Stop Preview</string>
+    <string name="reset_trim">Reset Trim</string>
+</resources>

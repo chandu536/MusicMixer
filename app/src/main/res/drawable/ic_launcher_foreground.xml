@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher foreground: waveform bars -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Waveform bars centred in the safe zone (72x72 safe area, offset 18,18) -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M22,52 L28,56 L22,56 Z
+                          M22,52 Q21,52 21,53 L21,55 Q21,56 22,56 L28,56 L28,52 Z"/>
+
+    <!-- Bar 1 short -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M22,52 L28,52 L28,56 L22,56 Z"/>
+    <!-- Bar 2 tall -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M34,36 L40,36 L40,72 L34,72 Z"/>
+    <!-- Bar 3 medium -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M46,42 L52,42 L52,66 L46,66 Z"/>
+    <!-- Bar 4 tallest (accent) -->
+    <path android:fillColor="#FFFF6B9D"
+        android:pathData="M58,28 L64,28 L64,80 L58,80 Z"/>
+    <!-- Bar 5 medium -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M70,40 L76,40 L76,68 L70,68 Z"/>
+    <!-- Bar 6 short -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M82,50 L88,50 L88,58 L82,58 Z"/>
+
+</vector>

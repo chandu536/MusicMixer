@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <!-- ══ TOP BAR ══════════════════════════════════════════════════════ -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/bg_dark"
+        app:elevation="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp">
+
+            <!-- Back to projects -->
+            <ImageButton
+                android:id="@+id/btn_back"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_back"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@color/text_secondary"
+                android:padding="10dp"
+                android:contentDescription="Back to projects"/>
+
+            <!-- Project name (editable feel) -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MusicMixer"
+                    android:textColor="@color/text_hint"
+                    android:textSize="10sp"/>
+
+                <TextView
+                    android:id="@+id/tv_project_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="My Mix"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+
+            </LinearLayout>
+
+            <!-- Global PLAY ALL button -->
+            <ImageButton
+                android:id="@+id/btn_play_all"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_play"
+                android:background="@drawable/bg_play_btn"
+                android:tint="@color/white"
+                android:padding="10dp"
+                android:contentDescription="Play all"/>
+
+            <!-- Share final mix -->
+            <ImageButton
+                android:id="@+id/btn_share_mix"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_share"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@color/text_secondary"
+                android:layout_marginStart="4dp"
+                android:contentDescription="Share mix"/>
+
+            <!-- Add tracks -->
+            <ImageButton
+                android:id="@+id/btn_add_tracks"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_add"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@color/primary"
+                android:contentDescription="Add tracks"/>
+
+            <!-- Download from URL -->
+            <ImageButton
+                android:id="@+id/btn_download_url"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_link"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@color/accent"
+                android:contentDescription="Download URL"/>
+
+        </LinearLayout>
+
+        <!-- Master volume row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp">
+
+            <TextView
+                android:id="@+id/tv_track_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 tracks"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
+                android:minWidth="60dp"/>
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_volume"
+                android:tint="@color/text_hint"
+                android:contentDescription="Volume"/>
+
+            <SeekBar
+                android:id="@+id/sb_master_volume"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:max="100"
+                android:progress="80"
+                android:progressTint="@color/primary"
+                android:thumbTint="@color/primary"/>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_fade"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Fade"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"/>
+
+        </LinearLayout>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="@color/divider"/>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- ══ BODY ══════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <!-- Empty state -->
+        <LinearLayout
+            android:id="@+id/empty_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="40dp"
+            android:visibility="visible">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:src="@drawable/ic_music_note_large"
+                android:alpha="0.25"
+                android:contentDescription="No tracks"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="No tracks yet"
+                android:textColor="@color/text_secondary"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-medium"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Tap + to add files or ⬇ to grab from a URL"
+                android:textColor="@color/text_hint"
+                android:textSize="13sp"
+                android:gravity="center"/>
+
+        </LinearLayout>
+
+        <!-- Track list (drag-to-reorder RecyclerView) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_tracks"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="6dp"
+            android:paddingBottom="16dp"
+            android:clipToPadding="false"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+    <!-- ══ LOADING OVERLAY ═══════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/loading_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#DD0D0E1A"
+        android:visibility="gone"
+        android:elevation="20dp">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            app:indicatorColor="@color/primary"
+            app:trackColor="#33FFFFFF"
+            app:indicatorSize="52dp"
+            app:trackThickness="5dp"/>
+
+        <TextView
+            android:id="@+id/tv_loading_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Loading…"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:fontFamily="sans-serif-medium"/>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

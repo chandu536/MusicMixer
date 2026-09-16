@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand -->
+    <color name="primary">#6C63FF</color>
+    <color name="primary_dark">#4A42D6</color>
+    <color name="accent">#FF6B9D</color>
+    <color name="accent_alt">#00D4AA</color>
+
+    <!-- Backgrounds -->
+    <color name="bg">#0D0E1A</color>
+    <color name="bg_dark">#08090F</color>
+    <color name="surface">#161728</color>
+    <color name="surface_high">#1E2036</color>
+
+    <!-- Text -->
+    <color name="text_primary">#F0F2FF</color>
+    <color name="text_secondary">#8891B5</color>
+    <color name="text_hint">#4A5080</color>
+
+    <!-- UI -->
+    <color name="divider">#252840</color>
+    <color name="white">#FFFFFF</color>
+    <color name="danger">#FF4757</color>
+    <color name="warning">#FFB300</color>
+    <color name="success">#00D4AA</color>
+
+    <!-- Waveform track colors (cycling) -->
+    <color name="track_color_0">#6C63FF</color>
+    <color name="track_color_1">#FF6B9D</color>
+    <color name="track_color_2">#00D4AA</color>
+    <color name="track_color_3">#FFB300</color>
+    <color name="track_color_4">#FF4757</color>
+    <color name="track_color_5">#00BFFF</color>
+    <color name="track_color_6">#A8E063</color>
+    <color name="track_color_7">#FF7043</color>
+</resources>
