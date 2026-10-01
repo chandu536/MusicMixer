@@ -23,7 +23,8 @@ class TrackAdapter(
     private val onRemove: (AudioTrack) -> Unit,
     private val onVolumeChanged: (AudioTrack, Int) -> Unit,
     private val onTrimChanged: (AudioTrack, Long, Long) -> Unit,
-    private val onOrderChanged: (Int, Int) -> Unit
+    private val onOrderChanged: (Int, Int) -> Unit,
+    private val onEditTrack: (AudioTrack) -> Unit = {}
 ) : ListAdapter<AudioTrack, TrackAdapter.TrackViewHolder>(DIFF_CALLBACK) {
 
     private val trackColors = listOf(
@@ -60,22 +61,11 @@ class TrackAdapter(
     inner class TrackViewHolder(val binding: ItemTrackBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        /**
-         * Update the live timer + playhead from the IO-thread position callback.
-         * [currentAbsMs] = trimStart + posMs  (absolute file position)
-         * [clipEndMs]    = trimEnd
-         * [clipStartMs]  = trimStart  (needed to compute playRatio)
-         * [totalDurMs]   = full clip duration
-         */
-        fun onPosition(currentAbsMs: Long, clipEndMs: Long, clipStartMs: Long, totalDurMs: Long) {
+        /** Update the live timer during playback. */
+        fun onPosition(currentAbsMs: Long, clipEndMs: Long) {
             binding.tvPlaybackTimer.post {
                 binding.tvPlaybackTimer.text =
                     "${FileUtils.formatDuration(currentAbsMs)} / ${FileUtils.formatDuration(clipEndMs)}"
-                // Advance playhead: ratio within full clip duration
-                if (totalDurMs > 0) {
-                    val ratio = currentAbsMs.toFloat() / totalDurMs
-                    binding.trimWaveform.setPlayPosition(ratio)
-                }
             }
         }
     }
@@ -104,31 +94,20 @@ class TrackAdapter(
             binding.tvTrimInfo.visibility = View.GONE
         }
 
-        // Waveform
+        // Static trim-ratio bar
         val startRatio = if (track.durationMs > 0) track.trimStartMs.toFloat() / track.durationMs else 0f
         val endRatio   = if (track.durationMs > 0) track.trimEndMs.toFloat()   / track.durationMs else 1f
-        binding.trimWaveform.bind(track.waveformPeaks, color, startRatio, endRatio)
+        binding.clipBar.bind(color, startRatio, endRatio)
 
-        // Static trim timestamps
+        // Trim timestamps
         binding.tvTrimStart.text = FileUtils.formatDuration(track.trimStartMs)
         binding.tvTrimEnd.text   = FileUtils.formatDuration(track.trimEndMs)
-
-        binding.trimWaveform.onTrimChanged = { s, e ->
-            val newStart = (s * track.durationMs).toLong()
-            val newEnd   = (e * track.durationMs).toLong()
-            binding.tvTrimStart.text = FileUtils.formatDuration(newStart)
-            binding.tvTrimEnd.text   = FileUtils.formatDuration(newEnd)
-            binding.tvTrimInfo.visibility = View.VISIBLE
-            binding.tvTrimInfo.text = "✂ ${FileUtils.formatDurationShort(newEnd - newStart)}"
-            onTrimChanged(track, newStart, newEnd)
-        }
 
         // Playback state
         val isThisPlaying = playingId == track.id
         binding.btnPlayTrack.setImageResource(if (isThisPlaying) R.drawable.ic_stop else R.drawable.ic_play)
         binding.btnPlayTrack.setBackgroundResource(if (isThisPlaying) R.drawable.bg_stop_btn else R.drawable.bg_play_btn)
         binding.tvPlaybackTimer.visibility = if (isThisPlaying) View.VISIBLE else View.GONE
-        if (!isThisPlaying) binding.trimWaveform.clearPlayhead()
 
         // Play / Stop
         binding.btnPlayTrack.setOnClickListener {
@@ -136,13 +115,9 @@ class TrackAdapter(
             else startClipPlayback(this, track)
         }
 
-        // Waveform playhead drag → seek on release
-        binding.trimWaveform.onScrubChanged = { ratio ->
-            if (playingId == track.id) {
-                val newStart = (ratio * track.durationMs).toLong()
-                val liveEnd  = (binding.trimWaveform.trimEndRatio * track.durationMs).toLong()
-                seekTo(newStart, liveEnd, track)
-            }
+        // Edit clip → open EditorActivity
+        binding.btnEdit.setOnClickListener {
+            onEditTrack(track)
         }
 
         // Delete confirmation
@@ -170,24 +145,12 @@ class TrackAdapter(
         playingId    = track.id
         activeHolder = holder
         notifyDataSetChanged()
-
-        val liveStart = (holder.binding.trimWaveform.trimStartRatio * track.durationMs).toLong()
-        val liveEnd   = (holder.binding.trimWaveform.trimEndRatio   * track.durationMs).toLong()
-        launchPlay(holder, track, liveStart, liveEnd)
-    }
-
-    /** Seek to a new position within the clip without triggering notifyDataSetChanged. */
-    private fun seekTo(newStart: Long, liveEnd: Long, track: AudioTrack) {
-        player.onPositionMs = null
-        player.stop()
-        playJob?.cancel()
-        val holder = activeHolder ?: return
-        launchPlay(holder, track, newStart, liveEnd)
+        launchPlay(holder, track, track.trimStartMs, track.trimEndMs)
     }
 
     private fun launchPlay(holder: TrackViewHolder, track: AudioTrack, start: Long, end: Long) {
         player.onPositionMs = { posMs ->
-            activeHolder?.onPosition(start + posMs, end, start, track.durationMs)
+            activeHolder?.onPosition(start + posMs, end)
         }
         playJob = CoroutineScope(Dispatchers.Main).launch {
             player.play(holder.binding.root.context.applicationContext, track.uri, start, end)

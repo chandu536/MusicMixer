@@ -1,0 +1,196 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MusicMixer v1.0 Release Notes</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px; line-height: 1.65;
+    background: #ffffff; color: #1f2328;
+    padding: 32px 16px 48px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  /* Header */
+  .header { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+  .app-icon { width: 64px; height: 64px; border-radius: 14px; background: #0d0e1a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .app-icon svg { width: 38px; height: 38px; }
+  .header-text h1 { font-size: 22px; font-weight: 700; color: #1f2328; }
+  .header-text .meta { font-size: 12px; color: #57606a; margin-top: 3px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-new  { background: #dff0d8; color: #2d7a2d; }
+  .badge-fix  { background: #fef3cd; color: #856404; }
+  .badge-info { background: #d1ecf1; color: #0c5460; }
+
+  /* Section */
+  h2 { font-size: 15px; font-weight: 600; color: #1f2328; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+  h3 { font-size: 13px; font-weight: 600; color: #3b82d4; margin: 18px 0 6px; }
+
+  /* Feature grid */
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 540px) { .feature-grid { grid-template-columns: 1fr; } }
+  .feature-card { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; }
+  .feature-card .fc-title { font-weight: 600; font-size: 13px; color: #1f2328; margin-bottom: 4px; }
+  .feature-card .fc-body { font-size: 12px; color: #57606a; }
+
+  /* Lists */
+  ul { padding-left: 18px; }
+  li { margin-bottom: 5px; font-size: 13px; color: #1f2328; }
+  li span.label { font-weight: 600; }
+
+  /* Install table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  th { background: #f7f8fa; text-align: left; padding: 8px 10px; font-weight: 600; border: 1px solid #e5e7eb; color: #1f2328; }
+  td { padding: 7px 10px; border: 1px solid #e5e7eb; color: #57606a; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  /* Install steps */
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps li { counter-increment: step; display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start; }
+  .steps li::before {
+    content: counter(step);
+    min-width: 24px; height: 24px; border-radius: 50%;
+    background: #3b82d4; color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .steps li .step-text { font-size: 13px; color: #1f2328; padding-top: 3px; }
+
+  /* APK info box */
+  .apk-box { background: #0d0e1a; border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .apk-name { font-size: 13px; font-weight: 600; color: #6C63FF; font-family: monospace; }
+  .apk-meta { font-size: 12px; color: #888; }
+
+  /* Known issues */
+  .issue-row { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; font-size: 13px; }
+  .issue-row .tag { background: #fff3cd; color: #856404; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+  /* Footer */
+  .footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #57606a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="header">
+    <div class="app-icon">
+      <svg fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="18" width="4" height="12" rx="2" fill="#6C63FF"></rect>
+        <rect x="10" y="10" width="4" height="20" rx="2" fill="#FF6B9D"></rect>
+        <rect x="16" y="6" width="4" height="28" rx="2" fill="#6C63FF"></rect>
+        <rect x="22" y="12" width="4" height="16" rx="2" fill="#00D4AA"></rect>
+        <rect x="28" y="16" width="4" height="10" rx="2" fill="#FF6B9D"></rect>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>MusicMixer  <span class="badge badge-new">v1.0.0</span></h1>
+      <div class="meta">Release Date: June 2025  ·  Platform: Android  ·  Min SDK: 26 (Android 8.0+)  ·  APK: 10.53 MB</div>
+      <div class="meta" style="margin-top:4px">GitHub: <strong>github.com/chandu536/MusicMixer</strong></div>
+    </div>
+  </div>
+
+  
+  <h2>🎵 What's New — Full Feature List</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-title">📁 Named Projects</div>
+      <div class="fc-body">Create, rename, and delete mix projects. Each project saves its own track list, trim states, and settings independently. Switch freely between projects.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">🎚️ Multi-track Mixer</div>
+      <div class="fc-body">Import multiple audio files at once. Drag-to-reorder tracks. Each clip plays sequentially to form a complete mix.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">✂️ Inline Waveform Trim</div>
+      <div class="fc-body">Each track shows an interactive waveform. Slim green ◀ / pink ▶ handles let you set exact start and end points without leaving the main screen.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">▶ Per-clip &amp; Global Play</div>
+      <div class="fc-body">Play any single clip in isolation. Global ▶ button plays all trimmed clips in sequence. Running timer shows exact absolute position (e.g. 1:05 / 2:10).</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">🎯 Playhead Scrubber</div>
+      <div class="fc-body">White vertical playhead scrolls during playback. Drag it anywhere within the trimmed region to seek instantly — fires on finger-up only, no snap-back.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">🎛️ Mix &amp; Export</div>
+      <div class="fc-body">Render all trimmed clips into a single WAV file. Preview the mix, share via WhatsApp, share via any app, or save directly to Downloads.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">⬇️ URL Download</div>
+      <div class="fc-body">Paste any YouTube or audio URL. Downloads via NewPipe extractor with cobalt.tools fallback. Download history saved locally.</div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">💾 Auto-save Persistence</div>
+      <div class="fc-body">All project data (tracks, trim, order) survives app close and reopen. URI permissions re-granted automatically on restore.</div>
+    </div>
+  </div>
+
+  
+  <h2>⚙️ Technical Highlights</h2>
+  <ul>
+    <li><span class="label">Audio engine:</span> MediaCodec + MediaExtractor for low-latency PCM decode; AudioTrack for direct output</li>
+    <li><span class="label">Fast waveform:</span> Seek-based peak sampling (120 points) — ~0.3 s per track vs ~8 s full decode</li>
+    <li><span class="label">WAV export:</span> Offline sequential PCM decode → 16-bit stereo WAV render with optional fade-in/out</li>
+    <li><span class="label">Architecture:</span> MVVM — AndroidViewModel + LiveData + ListAdapter with DiffUtil</li>
+    <li><span class="label">UI:</span> Material Components dark theme, ViewBinding, no Jetpack Compose</li>
+    <li><span class="label">Persistence:</span> SharedPreferences JSON per-project store (ProjectStore)</li>
+    <li><span class="label">URL download:</span> NewPipe Extractor v0.24.2 + OkHttp + cobalt.tools API fallback</li>
+  </ul>
+
+  
+  <h2>📦 APK Details</h2>
+  <div class="apk-box">
+    <div>
+      <div class="apk-name">MusicMixer-v1.0-release.apk</div>
+      <div class="apk-meta">Unsigned release build · 10.53 MB · Built with Gradle 8.4 + JDK 19</div>
+    </div>
+    <div class="apk-meta">
+      minSdk 26 · targetSdk 35<br />
+      BuildTools 34.0.0
+    </div>
+  </div>
+
+  
+  <h2>📱 Requirements</h2>
+  <table>
+    <tr><th>Requirement</th><th>Value</th></tr>
+    <tr><td>Android version</td><td>8.0 Oreo (API 26) or higher</td></tr>
+    <tr><td>Tested on</td><td>Android 16 (API 36) — OPPO CPH2487</td></tr>
+    <tr><td>Storage</td><td>~15 MB install + space for exported WAV files</td></tr>
+    <tr><td>Permissions</td><td>READ_MEDIA_AUDIO (Android 13+) · READ_EXTERNAL_STORAGE (≤ Android 12) · INTERNET (URL download)</td></tr>
+    <tr><td>Internet</td><td>Required only for URL/YouTube download feature</td></tr>
+  </table>
+
+  
+  <h2>🔧 How to Install (Sideload)</h2>
+  <ul class="steps">
+    <li><div class="step-text">On your Android device go to <strong>Settings → Security</strong> (or <strong>Apps → Special app access → Install unknown apps</strong>) and enable <strong>Install from unknown sources</strong> for your file manager or browser.</div></li>
+    <li><div class="step-text">Transfer <strong>MusicMixer-v1.0-release.apk</strong> to your device via USB, WhatsApp, Google Drive, or email.</div></li>
+    <li><div class="step-text">Open the APK file on your device using your file manager and tap <strong>Install</strong>.</div></li>
+    <li><div class="step-text">Launch <strong>MusicMixer</strong> from the app drawer. Create a new project and start mixing!</div></li>
+  </ul>
+
+  
+  <h2>⚠️ Known Limitations</h2>
+  <div class="issue-row"><span class="tag">NOTE</span> APK is unsigned — for Play Store distribution it must be signed with a keystore.</div>
+  <div class="issue-row"><span class="tag">NOTE</span> YouTube URL download depends on NewPipe extractor; may break if YouTube changes their API.</div>
+  <div class="issue-row"><span class="tag">NOTE</span> Export produces uncompressed WAV; large mixes (10+ min) can generate files &gt;100 MB.</div>
+  <div class="issue-row"><span class="tag">NOTE</span> Tracks imported from cloud storage (Drive, OneDrive) may not persist across reboots if URI permissions are not grantable.</div>
+
+  
+  <h2>🔗 Source Code</h2>
+  <ul>
+    <li><span class="label">Repository:</span> <a href="https://github.com/chandu536/MusicMixer">github.com/chandu536/MusicMixer</a></li>
+    <li><span class="label">Branch:</span> main</li>
+    <li><span class="label">Commit:</span> Initial commit — 78 files, 5 214 lines</li>
+    <li><span class="label">Language:</span> Kotlin 100%</li>
+  </ul>
+
+  <div class="footer">Made with IBM Bob</div>
+</div>
+</body>
+</html>

@@ -1,7 +1,9 @@
 package com.musicmixer.app.audio
 
 import android.content.Context
-import android.media.*
+import android.media.MediaCodec
+import android.media.MediaExtractor
+import android.media.MediaFormat
 import android.util.Log
 import com.musicmixer.app.model.AudioTrack
 import kotlinx.coroutines.Dispatchers
@@ -42,10 +44,10 @@ object AudioMixer {
         // We'll collect all PCM samples from each track (trimmed) into a combined buffer
         // then write the WAV header + samples.
 
-        // First pass: determine total sample count
+        // First pass: determine total sample count (including silence delays)
         var totalSamples = 0L
         for (track in tracks) {
-            val trimMs = track.trimmedDurationMs
+            val trimMs = track.trimmedDurationMs + track.delayBeforeMs + track.delayAfterMs
             totalSamples += (trimMs / 1000.0 * TARGET_SAMPLE_RATE).toLong() * TARGET_CHANNELS
         }
 
@@ -59,6 +61,11 @@ object AudioMixer {
                 val trackLabel = track.displayName
                 onProgress(globalProgress, "Processing: $trackLabel")
 
+                // Write silence before the clip
+                if (track.delayBeforeMs > 0) {
+                    fos.write(silenceBytes(track.delayBeforeMs))
+                }
+
                 decodeTrimmedPcm(
                     context = context,
                     track = track,
@@ -66,6 +73,11 @@ object AudioMixer {
                     applyFade = applyFade
                 ) { chunk ->
                     fos.write(chunk)
+                }
+
+                // Write silence after the clip
+                if (track.delayAfterMs > 0) {
+                    fos.write(silenceBytes(track.delayAfterMs))
                 }
 
                 globalProgress = ((trackIdx + 1f) / tracks.size * 95).roundToInt()
@@ -124,7 +136,6 @@ object AudioMixer {
             val bufInfo = MediaCodec.BufferInfo()
             val trimEndUs = track.trimEndMs * 1000L
             val trimStartUs = track.trimStartMs * 1000L
-            val trimDurationUs = trimEndUs - trimStartUs
             var inputDone = false
             var outputDone = false
 
@@ -205,6 +216,14 @@ object AudioMixer {
     }
 
     // ──────────────────────────────────────────────────────────────────────
+    // Generate a block of silent (zero) PCM bytes for the given duration
+    // ──────────────────────────────────────────────────────────────────────
+    private fun silenceBytes(durationMs: Long): ByteArray {
+        val samples = (durationMs / 1000.0 * TARGET_SAMPLE_RATE).toLong() * TARGET_CHANNELS
+        return ByteArray((samples * BYTES_PER_SAMPLE).toInt())
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
     // Simple linear resample + channel conversion
     // ──────────────────────────────────────────────────────────────────────
     private fun resampleAndMix(
@@ -266,5 +285,125 @@ object AudioMixer {
         raf.seek(0)
         raf.write(header)
         raf.close()
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Compress a WAV file for WhatsApp by downsampling to mono 22050 Hz PCM.
+    // No MediaCodec / MediaMuxer — pure stream processing, works on all devices.
+    // Stereo 44100 Hz 16-bit → mono 22050 Hz 16-bit ≈ 4× size reduction.
+    // Always compresses regardless of file size so the button always works.
+    // Returns a new smaller WAV File.
+    // ──────────────────────────────────────────────────────────────────────
+    suspend fun compressForWhatsApp(
+        context: Context,
+        wavFile: File,
+        @Suppress("UNUSED_PARAMETER") maxBytes: Long = 15L * 1024 * 1024,
+        onProgress: suspend (Int) -> Unit = {}
+    ): File = withContext(Dispatchers.IO) {
+
+        Log.d(TAG, "compressForWhatsApp: input=${wavFile.name} size=${wavFile.length()} bytes")
+        onProgress(0)
+
+        val outDir  = File(context.cacheDir, "exports").apply { mkdirs() }
+        val outFile = File(outDir, "mix_wa_${System.currentTimeMillis()}.wav")
+
+        // Source WAV is TARGET_SAMPLE_RATE (44100), TARGET_CHANNELS (2), 16-bit PCM.
+        // Destination: mono (1 ch), 22050 Hz, 16-bit PCM.
+        val DST_RATE      = 22050
+        val DST_CHANNELS  = 1
+        val SRC_FRAME_BYTES = TARGET_CHANNELS * BYTES_PER_SAMPLE  // 4 bytes per source frame
+
+        val srcFileLen = wavFile.length()
+        if (srcFileLen < 44) {
+            Log.e(TAG, "compressForWhatsApp: source file too small (${srcFileLen} bytes), aborting")
+            throw IllegalStateException("Source WAV is invalid (${srcFileLen} bytes)")
+        }
+        val pcmBytes = srcFileLen - 44L   // raw PCM bytes in source
+
+        java.io.FileInputStream(wavFile).use { fis ->
+            fis.skip(44)   // skip WAV header
+
+            FileOutputStream(outFile).use { fos ->
+                // Write placeholder header — we'll fix sizes at the end
+                val hdr = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
+                hdr.put("RIFF".toByteArray())
+                hdr.putInt(0)                               // placeholder RIFF size
+                hdr.put("WAVE".toByteArray())
+                hdr.put("fmt ".toByteArray())
+                hdr.putInt(16)
+                hdr.putShort(1)                             // PCM
+                hdr.putShort(DST_CHANNELS.toShort())
+                hdr.putInt(DST_RATE)
+                hdr.putInt(DST_RATE * DST_CHANNELS * BYTES_PER_SAMPLE)
+                hdr.putShort((DST_CHANNELS * BYTES_PER_SAMPLE).toShort())
+                hdr.putShort((BYTES_PER_SAMPLE * 8).toShort())
+                hdr.put("data".toByteArray())
+                hdr.putInt(0)                               // placeholder data size
+                fos.write(hdr.array())
+
+                // Read source in 4096-frame chunks.
+                // Keep every other source frame (decimate ×2: 44100 → 22050 Hz).
+                // Average L+R channels → mono.
+                val CHUNK_FRAMES = 4096
+                val readBuf  = ByteArray(CHUNK_FRAMES * SRC_FRAME_BYTES)
+                val writeBuf = ByteArray(CHUNK_FRAMES / 2 * DST_CHANNELS * BYTES_PER_SAMPLE)
+
+                var totalRead = 0L
+                var lastPct   = 0
+                var keepFrame = true
+
+                while (true) {
+                    val n = fis.read(readBuf)
+                    if (n <= 0) break
+
+                    val srcBuf = ByteBuffer.wrap(readBuf, 0, n).order(ByteOrder.LITTLE_ENDIAN)
+                    val dstBuf = ByteBuffer.wrap(writeBuf).order(ByteOrder.LITTLE_ENDIAN)
+                    dstBuf.clear()
+
+                    var i = 0
+                    while (i + SRC_FRAME_BYTES <= n) {
+                        val left  = srcBuf.getShort(i).toInt()
+                        val right = srcBuf.getShort(i + 2).toInt()
+                        if (keepFrame) {
+                            val mono = ((left + right) / 2).coerceIn(-32768, 32767).toShort()
+                            dstBuf.putShort(mono)
+                        }
+                        keepFrame = !keepFrame
+                        i += SRC_FRAME_BYTES
+                    }
+
+                    fos.write(writeBuf, 0, dstBuf.position())
+
+                    totalRead += n
+                    val pct = if (pcmBytes > 0) ((totalRead * 100L) / pcmBytes).toInt().coerceIn(0, 99)
+                              else 0
+                    if (pct >= lastPct + 5) { lastPct = pct; onProgress(pct) }
+                }
+            }
+        }
+
+        // Patch RIFF and data chunk sizes in the header with correct little-endian values
+        val actualPcm  = outFile.length() - 44L
+        val riffSize   = (actualPcm + 36L).toInt()
+        val dataSize   = actualPcm.toInt()
+        java.io.RandomAccessFile(outFile, "rw").use { raf ->
+            // RIFF size at byte 4 — little-endian
+            raf.seek(4)
+            raf.write(riffSize and 0xFF)
+            raf.write((riffSize shr 8) and 0xFF)
+            raf.write((riffSize shr 16) and 0xFF)
+            raf.write((riffSize shr 24) and 0xFF)
+            // data size at byte 40 — little-endian
+            raf.seek(40)
+            raf.write(dataSize and 0xFF)
+            raf.write((dataSize shr 8) and 0xFF)
+            raf.write((dataSize shr 16) and 0xFF)
+            raf.write((dataSize shr 24) and 0xFF)
+        }
+
+        Log.d(TAG, "compressForWhatsApp: output=${outFile.name} size=${outFile.length()} bytes " +
+                   "(${String.format("%.1f", outFile.length() / 1_048_576f)} MB)")
+        onProgress(100)
+        outFile
     }
 }

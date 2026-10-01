@@ -99,6 +99,17 @@
                 android:padding="8dp"
                 android:contentDescription="Play clip"/>
 
+            <!-- Edit -->
+            <ImageButton
+                android:id="@+id/btn_edit"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_edit"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@color/text_secondary"
+                android:contentDescription="Edit clip"/>
+
             <!-- Delete -->
             <ImageButton
                 android:id="@+id/btn_remove"
@@ -112,20 +123,20 @@
 
         </LinearLayout>
 
-        <!-- ── Row 2: Waveform — trim handles ── -->
-        <com.musicmixer.app.ui.editor.TrimWaveformView
-            android:id="@+id/trim_waveform"
+        <!-- ── Row 2: Static trim bar (read-only, no handles) ── -->
+        <com.musicmixer.app.ui.main.ClipBarView
+            android:id="@+id/clip_bar"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
+            android:layout_height="10dp"
             android:layout_marginTop="8dp"
-            android:background="@color/bg"/>
+            android:layout_marginBottom="2dp"/>
 
         <!-- Time row: trim-start label | live timer (center) | trim-end label -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingTop="4dp"
+            android:paddingTop="2dp"
             android:gravity="center_vertical">
 
             <!-- Trim start timestamp (always visible) -->

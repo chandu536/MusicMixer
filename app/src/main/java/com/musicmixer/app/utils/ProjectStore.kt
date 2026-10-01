@@ -82,15 +82,22 @@ object ProjectStore {
                    tracks: List<AudioTrack>, masterVol: Float, fade: Boolean) {
         val arr = JSONArray()
         tracks.forEach { t ->
+            // Persist waveform peaks as integers 0-100 (peak * 100) — tiny, fast to restore
+            val peaksArr = JSONArray()
+            t.waveformPeaks.forEach { p -> peaksArr.put((p * 100).toInt()) }
+
             arr.put(JSONObject().apply {
-                put("id",         t.id)
-                put("uri",        t.uri.toString())
-                put("name",       t.displayName)
-                put("durationMs", t.durationMs)
-                put("trimStart",  t.trimStartMs)
-                put("trimEnd",    t.trimEndMs)
-                put("volume",     t.volumePercent)
-                put("colorIndex", t.colorIndex)
+                put("id",            t.id)
+                put("uri",           t.uri.toString())
+                put("name",          t.displayName)
+                put("durationMs",    t.durationMs)
+                put("trimStart",     t.trimStartMs)
+                put("trimEnd",       t.trimEndMs)
+                put("volume",        t.volumePercent)
+                put("colorIndex",    t.colorIndex)
+                put("delayBefore",   t.delayBeforeMs)
+                put("delayAfter",    t.delayAfterMs)
+                put("peaks",         peaksArr)
             })
         }
         prefs(context).edit()
@@ -106,6 +113,12 @@ object ProjectStore {
             val arr = JSONArray(json)
             (0 until arr.length()).map { i ->
                 val o = arr.getJSONObject(i)
+                // Restore peaks from cache; empty array = old save without peaks (will re-decode once)
+                val peaksArr = o.optJSONArray("peaks")
+                val peaks = if (peaksArr != null && peaksArr.length() > 0)
+                    FloatArray(peaksArr.length()) { j -> peaksArr.getInt(j) / 100f }
+                else FloatArray(0)
+
                 AudioTrack(
                     id            = o.getString("id"),
                     uri           = Uri.parse(o.getString("uri")),
@@ -114,8 +127,10 @@ object ProjectStore {
                     trimStartMs   = o.getLong("trimStart"),
                     trimEndMs     = o.getLong("trimEnd"),
                     volumePercent = o.getInt("volume"),
-                    waveformPeaks = FloatArray(0),
-                    colorIndex    = o.getInt("colorIndex")
+                    waveformPeaks = peaks,
+                    colorIndex    = o.getInt("colorIndex"),
+                    delayBeforeMs = o.optLong("delayBefore", 0L),
+                    delayAfterMs  = o.optLong("delayAfter",  0L)
                 )
             }
         } catch (e: Exception) { emptyList() }

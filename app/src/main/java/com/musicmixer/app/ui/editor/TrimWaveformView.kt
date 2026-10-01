@@ -10,18 +10,15 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Waveform view with:
- *  - Slim trim handles (4dp vertical bar + small grip nub) at start/end of selected region
- *  - Draggable white playhead line that scrolls during playback
+ * Waveform view with draggable trim handles and a draggable playhead.
  *
- * Handle design: a thin coloured vertical bar spanning full height, with a small
- * rounded rect "thumb" in the centre — takes almost no horizontal space so the
- * waveform remains fully visible even on short clips.
+ * Touch priority (first match wins):
+ *   1. Playhead  — highest; grab anywhere within PLAYHEAD_SLOP of the line
+ *   2. Trim-end handle  — thumb rect hit area
+ *   3. Trim-start handle — thumb rect hit area
  *
- * Touch priority (closest wins):
- *   1. Trim start handle  (within HANDLE_SLOP of bar centre-x)
- *   2. Trim end handle    (within HANDLE_SLOP of bar centre-x)
- *   3. Playhead           (within PLAYHEAD_SLOP of line x, only when visible)
+ * Handles respond when the finger touches anywhere inside the thumb rectangle
+ * (not just near the thin bar edge).  Playhead is drawn on top of handles.
  */
 class TrimWaveformView @JvmOverloads constructor(
     context: Context,
@@ -55,28 +52,23 @@ class TrimWaveformView @JvmOverloads constructor(
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeWidth = 2f
     }
-    // Slim handle bar
     private val handleBarPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    // Thumb grip rect on the handle
-    private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    // Playhead line
-    private val playLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val thumbPaint     = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val playLinePaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE; style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
     }
-    // Playhead top diamond
     private val playDiamondPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE; style = Paint.Style.FILL
     }
 
     private val dp get() = resources.displayMetrics.density
 
-    // Slim handle: bar is 4dp wide; thumb is 10dp wide × 20dp tall centred on bar
-    private val BAR_W    get() = 4f  * dp   // handle bar width px
-    private val THUMB_W  get() = 12f * dp   // grip thumb width px
-    private val THUMB_H  get() = 22f * dp   // grip thumb height px
+    private val BAR_W   get() = 4f  * dp   // handle thin bar width px
+    private val THUMB_W get() = 28f * dp   // thumb hit-area width px (wider = easier to grab)
+    private val THUMB_H get() = 44f * dp   // thumb hit-area height px
 
-    private val HANDLE_SLOP  = 40f  // px touch radius for trim handles
-    private val PLAYHEAD_SLOP = 36f // px touch radius for playhead
+    // Touch slop for playhead line (px either side)
+    private val PLAYHEAD_SLOP get() = 28f * dp
 
     private enum class Dragging { NONE, TRIM_START, TRIM_END, PLAYHEAD }
     private var dragging = Dragging.NONE
@@ -84,21 +76,30 @@ class TrimWaveformView @JvmOverloads constructor(
     // ── Public API ────────────────────────────────────────────────────────────
 
     fun bind(peaks: FloatArray, color: Int, startRatio: Float, endRatio: Float) {
-        this.peaks = peaks; this.trackColor = color
-        trimStartRatio = startRatio.coerceIn(0f, 1f)
-        trimEndRatio   = endRatio.coerceIn(0f, 1f)
-        invalidate()
-    }
-
-    fun setPlayPosition(ratio: Float) {
-        playRatio = ratio.coerceIn(trimStartRatio, trimEndRatio)
+        this.peaks      = peaks
+        this.trackColor = color
+        trimStartRatio  = startRatio.coerceIn(0f, 1f)
+        trimEndRatio    = endRatio.coerceIn(0f, 1f)
+        // Clamp playhead into new trim region; always keep it visible
+        playRatio       = playRatio.coerceIn(trimStartRatio, trimEndRatio)
         playheadVisible = true
         invalidate()
     }
 
+    fun setPlayPosition(ratio: Float) {
+        playRatio       = ratio.coerceIn(trimStartRatio, trimEndRatio)
+        playheadVisible = true
+        invalidate()
+    }
+
+    /**
+     * Reset playhead to trim-start WITHOUT resetting to 0.
+     * Called by stopPreview() — keeps the line where the user scrubbed to
+     * only if the user hasn't dragged it themselves; otherwise just shows it.
+     */
     fun clearPlayhead() {
-        playheadVisible = false
-        playRatio = trimStartRatio
+        playRatio       = trimStartRatio
+        playheadVisible = true
         invalidate()
     }
 
@@ -120,13 +121,12 @@ class TrimWaveformView @JvmOverloads constructor(
         if (w == 0f || h == 0f) return
 
         canvas.drawRect(0f, 0f, w, h, bgPaint)
-
         if (peaks.isEmpty()) return
 
         val mid  = h / 2f
         val barW = w / peaks.size
 
-        // ── Waveform bars ──────────────────────────────────────────────────────
+        // ── Waveform ──────────────────────────────────────────────────────────
         barPaint.color = trackColor
         for (i in peaks.indices) {
             val x    = i * barW
@@ -137,21 +137,25 @@ class TrimWaveformView @JvmOverloads constructor(
         val startPx = trimStartRatio * w
         val endPx   = trimEndRatio   * w
 
-        // ── Dim outside trim region ────────────────────────────────────────────
+        // ── Dim outside trim ──────────────────────────────────────────────────
         canvas.drawRect(0f, 0f, startPx, h, dimPaint)
         canvas.drawRect(endPx, 0f, w, h, dimPaint)
 
-        // ── Active region border ───────────────────────────────────────────────
+        // ── Border ────────────────────────────────────────────────────────────
         borderPaint.color = trackColor
         canvas.drawRect(startPx, 1f, endPx, h - 1f, borderPaint)
 
-        // ── Playhead (drawn below trim handles so handles stay on top) ──────────
+        // ── Trim handles (drawn before playhead so playhead is on top) ─────────
+        drawHandle(canvas, startPx, h, mid, Color.parseColor("#00D4AA"), isStart = true)
+        drawHandle(canvas, endPx,   h, mid, Color.parseColor("#FF6B9D"), isStart = false)
+
+        // ── Playhead (drawn last → visually on top of handles) ────────────────
         if (playheadVisible) {
             val phX = playRatio * w
-            playLinePaint.strokeWidth = 2.5f * dp
+            playLinePaint.strokeWidth = 3f * dp
             canvas.drawLine(phX, 0f, phX, h, playLinePaint)
-            // Small diamond at top
-            val r = 5f * dp
+            // Diamond at top
+            val r = 6f * dp
             val path = Path().apply {
                 moveTo(phX,     2f)
                 lineTo(phX + r, r + 2f)
@@ -161,49 +165,31 @@ class TrimWaveformView @JvmOverloads constructor(
             }
             canvas.drawPath(path, playDiamondPaint)
         }
-
-        // ── Start handle (green slim bar + thumb) ──────────────────────────────
-        drawHandle(canvas, startPx, h, mid, Color.parseColor("#00D4AA"), isStart = true)
-
-        // ── End handle (pink slim bar + thumb) ────────────────────────────────
-        drawHandle(canvas, endPx, h, mid, Color.parseColor("#FF6B9D"), isStart = false)
     }
 
-    /**
-     * Draw a slim vertical handle bar centred on [cx].
-     * The bar is [BAR_W] wide and spans full height.
-     * A rounded thumb grip is centred on the bar.
-     */
     private fun drawHandle(canvas: Canvas, cx: Float, h: Float, mid: Float, color: Int, isStart: Boolean) {
         handleBarPaint.color = color
-        // Bar: thin vertical strip
         val halfBar = BAR_W / 2f
-        canvas.drawRoundRect(
-            RectF(cx - halfBar, 0f, cx + halfBar, h),
-            halfBar, halfBar, handleBarPaint
-        )
-        // Thumb: wider rounded rect in the centre
+        canvas.drawRoundRect(RectF(cx - halfBar, 0f, cx + halfBar, h),
+            halfBar, halfBar, handleBarPaint)
+
         thumbPaint.color = color
         val tw = THUMB_W / 2f
         val th = THUMB_H / 2f
-        canvas.drawRoundRect(
-            RectF(cx - tw, mid - th, cx + tw, mid + th),
-            6f * (resources.displayMetrics.density), 6f * (resources.displayMetrics.density),
-            thumbPaint
-        )
-        // Small arrow inside the thumb
-        val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        arrowPaint.setColor(Color.WHITE)
-        arrowPaint.style = Paint.Style.FILL
-        val aw = 4f * resources.displayMetrics.density
+        val r  = 6f * dp
+        canvas.drawRoundRect(RectF(cx - tw, mid - th, cx + tw, mid + th), r, r, thumbPaint)
+
+        // Arrow inside thumb
+        val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            setColor(Color.WHITE); style = Paint.Style.FILL
+        }
+        val aw   = 5f * dp
         val path = Path()
         if (isStart) {
-            // ◀ pointing left
             path.moveTo(cx + aw, mid - aw * 1.4f)
             path.lineTo(cx - aw, mid)
             path.lineTo(cx + aw, mid + aw * 1.4f)
         } else {
-            // ▶ pointing right
             path.moveTo(cx - aw, mid - aw * 1.4f)
             path.lineTo(cx + aw, mid)
             path.lineTo(cx - aw, mid + aw * 1.4f)
@@ -212,10 +198,22 @@ class TrimWaveformView @JvmOverloads constructor(
         canvas.drawPath(path, arrowPaint)
     }
 
+    // ── Touch helpers ─────────────────────────────────────────────────────────
+
+    /** Returns true if [x],[y] is inside the thumb rectangle centred on [cx]. */
+    private fun inThumb(x: Float, y: Float, cx: Float): Boolean {
+        val h   = height.toFloat()
+        val mid = h / 2f
+        val tw  = THUMB_W / 2f
+        val th  = THUMB_H / 2f
+        return x >= cx - tw && x <= cx + tw && y >= mid - th && y <= mid + th
+    }
+
     // ── Touch ─────────────────────────────────────────────────────────────────
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val x = event.x
+        val y = event.y
         val w = width.toFloat()
         if (w == 0f) return false
 
@@ -225,19 +223,25 @@ class TrimWaveformView @JvmOverloads constructor(
 
         return when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                val dStart    = abs(x - startPx)
-                val dEnd      = abs(x - endPx)
                 val dPlayhead = if (playheadVisible) abs(x - playheadX) else Float.MAX_VALUE
+
                 dragging = when {
-                    dStart < HANDLE_SLOP && dEnd < HANDLE_SLOP ->
-                        if (dEnd <= dStart) Dragging.TRIM_END else Dragging.TRIM_START
-                    dStart    < HANDLE_SLOP  -> Dragging.TRIM_START
-                    dEnd      < HANDLE_SLOP  -> Dragging.TRIM_END
+                    // 1. Playhead has highest priority — grab by x-proximity
                     dPlayhead < PLAYHEAD_SLOP -> Dragging.PLAYHEAD
-                    else                     -> Dragging.NONE
+
+                    // 2. Trim handles — grab by thumb rect hit-test
+                    inThumb(x, y, endPx)   -> Dragging.TRIM_END
+                    inThumb(x, y, startPx) -> Dragging.TRIM_START
+
+                    // 3. Fallback: x-proximity to handle bars (for when thumb is off-screen edge)
+                    abs(x - endPx)   < THUMB_W / 2f -> Dragging.TRIM_END
+                    abs(x - startPx) < THUMB_W / 2f -> Dragging.TRIM_START
+
+                    else -> Dragging.NONE
                 }
                 if (dragging != Dragging.NONE) {
-                    parent?.requestDisallowInterceptTouchEvent(true); true
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                    true
                 } else false
             }
 
@@ -256,7 +260,7 @@ class TrimWaveformView @JvmOverloads constructor(
                         onTrimChanged?.invoke(trimStartRatio, trimEndRatio)
                     }
                     Dragging.PLAYHEAD -> {
-                        // Move line visually — don't seek yet
+                        // Move playhead freely; do NOT call clearPlayhead/stopPreview here
                         playRatio = ratio.coerceIn(trimStartRatio, trimEndRatio)
                     }
                     Dragging.NONE -> {}
@@ -267,9 +271,12 @@ class TrimWaveformView @JvmOverloads constructor(
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 parent?.requestDisallowInterceptTouchEvent(false)
-                // Seek fires only once on release
-                if (dragging == Dragging.PLAYHEAD) onScrubChanged?.invoke(playRatio)
+                if (dragging == Dragging.PLAYHEAD) {
+                    // Fire scrub callback — EditorActivity decides whether to seek or just update
+                    onScrubChanged?.invoke(playRatio)
+                }
                 dragging = Dragging.NONE
+                invalidate()
                 true
             }
 

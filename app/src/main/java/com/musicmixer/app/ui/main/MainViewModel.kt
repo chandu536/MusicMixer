@@ -47,27 +47,44 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         restoreFromPrefs()
     }
 
-    /** Reload saved stubs → re-decode waveform peaks → emit. */
+    /**
+     * Reload saved stubs and emit immediately if peaks are already cached.
+     * Only falls back to AudioDecoder (slow) for old saves that have no cached peaks —
+     * runs once, then saves peaks so every subsequent open is instant.
+     */
     private fun restoreFromPrefs() {
         val stubs = ProjectStore.loadTrackStubs(getApplication(), projectId)
         if (stubs.isEmpty()) return
 
         colorCounter = (stubs.maxOfOrNull { it.colorIndex } ?: -1) + 1
 
-        _loading.postValue(true)
-        _loadingMsg.postValue("Restoring ${stubs.size} track${if (stubs.size != 1) "s" else ""}…")
-        viewModelScope.launch {
-            val restored = mutableListOf<AudioTrack>()
-            stubs.forEachIndexed { idx, stub ->
-                _loadingMsg.postValue("Restoring ${idx + 1}/${stubs.size}: ${stub.displayName}")
+        // Split into tracks that already have peaks vs. those that need decoding
+        val readyNow   = stubs.filter { it.waveformPeaks.isNotEmpty() }
+        val needDecode = stubs.filter { it.waveformPeaks.isEmpty() }
 
-                // Re-grant URI permission (needed after process restart)
+        if (needDecode.isEmpty()) {
+            // ── Fast path: all peaks cached → show instantly, no loading overlay ──
+            _tracks.value = readyNow.toMutableList()
+            return
+        }
+
+        // ── Slow path: only for old saves missing cached peaks (runs once) ──
+        _loading.value = true
+        _loadingMsg.value = "Analysing ${needDecode.size} new track${if (needDecode.size != 1) "s" else ""}…"
+
+        // Emit the already-ready tracks immediately so the list isn't blank while decoding
+        if (readyNow.isNotEmpty()) _tracks.value = readyNow.toMutableList()
+
+        viewModelScope.launch {
+            val restored = readyNow.toMutableList()
+            needDecode.forEachIndexed { idx, stub ->
+                _loadingMsg.postValue("Analysing ${idx + 1}/${needDecode.size}: ${stub.displayName}")
+
                 try {
                     getApplication<Application>().contentResolver
                         .takePersistableUriPermission(stub.uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                } catch (_: Exception) { /* might already be held or not grantable */ }
+                } catch (_: Exception) {}
 
-                // Re-decode peaks; keep existing trim/volume from persisted stub
                 val decoded = try {
                     AudioDecoder.loadTrackMeta(getApplication(), stub.uri, stub.colorIndex)
                 } catch (_: Exception) { null }
@@ -77,14 +94,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         id            = stub.id,
                         trimStartMs   = stub.trimStartMs,
                         trimEndMs     = stub.trimEndMs,
-                        volumePercent = stub.volumePercent
+                        volumePercent = stub.volumePercent,
+                        delayBeforeMs = stub.delayBeforeMs,
+                        delayAfterMs  = stub.delayAfterMs
                     ))
                 }
-                // If URI is no longer accessible, silently skip
             }
             _tracks.postValue(restored)
             _loading.postValue(false)
             _loadingMsg.postValue(null)
+            // Only persist if we actually decoded something — never wipe existing data with empty list
+            if (restored.isNotEmpty()) persistNow()
         }
     }
 
@@ -119,7 +139,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val idx = list.indexOfFirst { it.id == updated.id }
         if (idx >= 0) {
             list[idx] = updated
-            _tracks.value = list
+            _tracks.value = list.toMutableList()   // new list instance forces LiveData to notify observers
             persistNow()
         }
     }
@@ -148,6 +168,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val idx = list.indexOfFirst { it.id == track.id }
         if (idx >= 0) {
             list[idx] = list[idx].copy(volumePercent = percent)
+            _tracks.value = list   // emit so observers (e.g. mix) see the new value
             persistNow()
         }
     }
